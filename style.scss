@@ -1,0 +1,55 @@
+* {
+  margin: 0;
+  padding: 0;
+
+  box-sizing: border-box;
+}
+svg {
+  border: 2px solid green;
+
+  width: 100%;
+  @media screen and (min-width: 750px) {
+    width: 50%;
+  }
+  height: auto;
+
+  margin: 0;
+}
+
+.yAxis text {
+  font-size: 20px;
+}
+
+.xAxis text {
+  font-size: 20px;
+}
+
+select,
+option {
+  width: 100%;
+  font-size: 3vw;
+  @media screen and (min-width: 750px) {
+    font-size: 1.5vw;
+    width: 50%;
+  }
+}
+
+span {
+  display: none;
+  position: fixed;
+  color: red;
+  background-color: yellow;
+  font-size: 4vw;
+  transform: translate(-8vw, -14vw);
+  @media screen and (min-width: 750px) {
+    font-size: 2vw;
+    transform: translate(-4vw, -7vw);
+  }
+  cursor: pointer;
+  padding: 0.25em;
+  text-align: center;
+}
+
+circle {
+  cursor: pointer;
+}
