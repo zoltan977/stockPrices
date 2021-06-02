@@ -1,113 +1,175 @@
-const express = require('express');
+require("dotenv").config();
+
+const express = require("express");
 const app = express();
-const fs = require('fs');
-const cors = require('cors');
-const fetch = require('node-fetch');
+const fs = require("fs");
+const cors = require("cors");
+const fetch = require("node-fetch");
 
 const PORT = process.env.PORT || 8000;
 
+app.use(cors());
+app.use("/", express.static(__dirname + "/public"));
+app.use(express.json({ extended: false }));
 
+const tickersFilePath = __dirname + "/data/" + "tickers.json";
+const tickersDataFilePath = __dirname + "/data/" + "tickersData.json";
 
+//Indicates the state of the updating process
+let index = 0;
+//Indicates if there is an updating in progress
+let updating = false;
 
-const tickersFilePath = __dirname + '/data/' + 'tickers.json';
-const tickersDataFilePath = __dirname + '/data/' + 'tickersData.json';
+//Reads the API keys from the env file
+const apiKeys = process.env.API_KEYS.toString().split("_");
 
-let jsonData = null;
+//Gives back the json data from the given file
+const readFile = (filePath) => {
+  let jsonData = null;
 
-const readTickers = () => {
-    try {
-        let data = fs.readFileSync(tickersFilePath);
-        jsonData = JSON.parse(data);
-    } catch (err) {
-        console.error(err);
-    }
-}
+  try {
+    const file = fs.readFileSync(filePath);
+    jsonData = JSON.parse(file);
+  } catch (err) {
+    console.error(err);
+    jsonData = null;
+  } finally {
+    return jsonData;
+  }
+};
 
-const writeTickers = async () => {
-    
-    const tickers = await fetch("http://api.marketstack.com/v1/tickers?access_key=7df8a4a764f434b90f370ddf777fd110&limit=1000")
-    .then(r => r.json());
-
-    try {
-        fs.writeFileSync(tickersFilePath, JSON.stringify({tickers: tickers.data}));
-    } catch (err) {
-        console.error(err);
-    }
-
-}
-
-readTickers()
-if (!jsonData || !jsonData.tickers || !jsonData.tickers.length) {
-    writeTickers()
-}
-
-
-const readTickersData = () => {
-
-    try {
-        let data = fs.readFileSync(tickersDataFilePath);
-        jsonData = JSON.parse(data);
-    } catch (err) {
-        console.error(err);
-    }
-}
-
-const writeTickersData = async () => {
-
-    const date = new Date()
-    const aYearAgo = new Date((new Date()).setFullYear(date.getFullYear() - 1));
-
-    readTickers()
-
-    let tickersData = {}
-    for (const ticker of jsonData.tickers) {
-        
-        const tickerData = await fetch(`http://api.marketstack.com/v1/eod?access_key=7df8a4a764f434b90f370ddf777fd110&symbols=${ticker.symbol}&limit=1000&date_from=${aYearAgo.toISOString().slice(0, 10)}&date_to=${date.toISOString().slice(0, 10)}`)
-        .then(r => r.json());
-
-        tickersData[ticker.symbol] = tickerData.data
-    }
+//updates the data files if they are outdated or not existent
+const init = async () => {
+  //query the tickers data from the API and writes it in a data file
+  const writeTickers = async () => {
+    const tickers = await fetch(
+      `http://api.marketstack.com/v1/tickers?access_key=${apiKeys[0]}&limit=1000`
+    ).then((r) => r.json());
 
     try {
-        fs.writeFileSync(tickersDataFilePath, JSON.stringify({date: date.toISOString().slice(0, 10), tickersData: tickersData}));
+      fs.writeFileSync(
+        tickersFilePath,
+        JSON.stringify({ tickers: tickers.data })
+      );
     } catch (err) {
-        console.error(err);
+      console.error(err);
+    }
+  };
+
+  //query the data of the saved tickers(symbols) from the API
+  const writeTickersData = async () => {
+    const date = new Date();
+    const aYearAgo = new Date(new Date().setFullYear(date.getFullYear() - 1));
+
+    const tickersFile = readFile(tickersFilePath);
+
+    //symbols of the stored tickers
+    const symbolsArray = [];
+    for (const t of tickersFile.tickers) {
+      symbolsArray.push(t.symbol);
     }
 
-}
+    const chunkArray = (inputArray, chunk_size) => {
+      const outputArray = [];
 
-readTickersData()
-if (!jsonData || !jsonData.date || (jsonData.date !== new Date().toISOString().slice(0, 10))) {
-    writeTickersData()
-}
+      while (inputArray.length) {
+        outputArray.push(inputArray.splice(0, chunk_size));
+      }
 
+      return outputArray;
+    };
 
+    //stores the 1000 ticker sybols in arrays of 32 elements
+    const chunkedSymbolsArray = chunkArray(symbolsArray, 32);
 
-app.use(cors())
-app.use('/', express.static(__dirname + '/public'))
-app.use(express.json({ extended: false }))
+    const tickersData = [];
+    //queries the API in a for loop
+    //retrives the data(of the last one year) of 32 items(symbols) in every loop
+    for (const chunk of chunkedSymbolsArray) {
+      const response = await fetch(
+        `http://api.marketstack.com/v1/eod?access_key=${
+          apiKeys[index + 1]
+        }&symbols=${chunk.join(",")}&limit=10000&date_from=${aYearAgo
+          .toISOString()
+          .slice(0, 10)}&date_to=${date.toISOString().slice(0, 10)}`
+      ).then((r) => r.json());
 
-app.get(
-    '/api/tickers',
-    (req, res) => {
-        
-        readTickers()
+      //indicates the state of the updating process
+      index++;
 
-        res.json({data: jsonData.tickers})
-})
+      console.log("pagination: ", response.pagination);
 
-app.get(
-    '/api/tickersData/:ticker',
-    (req, res) => {
-           
-        readTickersData()
+      tickersData.push(...response.data);
+    }
 
-        const ticker = req.params.ticker
+    //writing the data of the tickers in a file
+    try {
+      fs.writeFileSync(
+        tickersDataFilePath,
+        JSON.stringify({
+          date: date.toISOString().slice(0, 10),
+          tickersData: tickersData,
+        })
+      );
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
-        res.json({data: jsonData.tickersData[ticker]})
-})
+  //starts the updating process if it is necessary
+  updating = true;
+  const tickersData = readFile(tickersDataFilePath);
+  if (
+    !tickersData ||
+    !tickersData.date ||
+    tickersData.date !== new Date().toISOString().slice(0, 10)
+  ) {
+    await writeTickers();
+    await writeTickersData();
+  }
+  updating = false;
+  index = 0;
+};
 
+//initiates an updating process
+app.get("/api/refresh", async (req, res) => {
+  if (updating) return;
 
-app.listen(PORT, function() {
-    console.log('Express server listening on port ', PORT);
+  await init();
+
+  res.json({ msg: "Database has been updated" });
+});
+
+//gives back the current state of the updating process
+app.get("/api/index", async (req, res) => {
+  res.json({ index });
+});
+
+//gives back the ticker symbols
+app.get("/api/tickers", (req, res) => {
+  const tickersFile = readFile(tickersFilePath);
+
+  if (!tickersFile || !tickersFile.tickers) {
+    res.status(500).json({ err: "Server Error (file reading error)" });
+  } else {
+    res.json({ data: tickersFile.tickers });
+  }
+});
+
+//gives back the data of the ticker the symbol of which has been posted
+app.post("/api/tickersData", (req, res) => {
+  const tickersDataFile = readFile(tickersDataFilePath);
+
+  if (!tickersDataFile || !tickersDataFile.tickersData)
+    res.status(500).json({ err: "Server Error (file reading error)" });
+  else {
+    const ticker = req.body.ticker;
+    res.json({
+      data: tickersDataFile.tickersData.filter((td) => td.symbol === ticker),
+    });
+  }
+});
+
+app.listen(PORT, function () {
+  console.log("Express server listening on port ", PORT);
 });

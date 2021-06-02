@@ -5,17 +5,55 @@
           box-sizing: border-box;
 }
 
-svg {
-  border: 2px solid green;
+.main {
+  min-height: 100vh;
+  background-color: #00ff62;
+  padding-top: 2vw;
+}
+
+.main .content {
+  position: relative;
+  overflow-y: auto;
   width: 100%;
-  height: auto;
-  margin: 0;
+  margin: 0 auto;
+  text-align: center;
 }
 
 @media screen and (min-width: 750px) {
-  svg {
+  .main .content {
     width: 50%;
   }
+}
+
+.main .content .title {
+  width: 100%;
+}
+
+.main .content .title h1 {
+  font-size: 6vw;
+  text-align: center;
+}
+
+@media screen and (min-width: 750px) {
+  .main .content .title h1 {
+    font-size: 3vw;
+  }
+}
+
+.main .content .title img {
+  width: 100%;
+  margin-top: -8vw;
+}
+
+@media screen and (min-width: 750px) {
+  .main .content .title img {
+    margin-top: -4vw;
+  }
+}
+
+svg {
+  width: 100%;
+  height: auto;
 }
 
 .yAxis text {
@@ -26,41 +64,158 @@ svg {
   font-size: 20px;
 }
 
-select,
-option {
-  width: 100%;
+select {
+  width: 90%;
   font-size: 3vw;
+  text-align-last: center;
+  text-align: center;
+  padding: 0.5em;
+  background-image: -webkit-gradient(linear, left top, left bottom, from(#3d94f6), to(#1e62d0));
+  background-image: linear-gradient(top, #3d94f6, #1e62d0);
+  border-radius: 0.5em;
+  color: #ffffff;
+  -webkit-box-shadow: 1px 1px 0.5em 0 #000000;
+          box-shadow: 1px 1px 0.5em 0 #000000;
+  text-shadow: 1px 1px 0.5em #000000;
+  border: solid #337fed 1px;
+  cursor: pointer;
+  outline: none;
 }
 
 @media screen and (min-width: 750px) {
-  select,
-  option {
+  select {
     font-size: 1.5vw;
-    width: 50%;
   }
 }
 
-span {
-  display: none;
-  position: fixed;
-  color: red;
-  background-color: yellow;
+option {
+  color: #000000;
+}
+
+select:hover {
+  border: solid #337fed 1px;
+  background-image: -webkit-gradient(linear, left top, left bottom, from(#1e62d0), to(#3d94f6));
+  background-image: linear-gradient(top, #1e62d0, #3d94f6);
+  border-radius: 0.5em;
+}
+
+.tip {
+  background-color: rgba(107, 100, 100, 0.9);
   font-size: 4vw;
-  -webkit-transform: translate(-8vw, -14vw);
-          transform: translate(-8vw, -14vw);
-  cursor: pointer;
   padding: 0.25em;
   text-align: center;
 }
 
 @media screen and (min-width: 750px) {
-  span {
+  .tip {
     font-size: 2vw;
-    -webkit-transform: translate(-4vw, -7vw);
-            transform: translate(-4vw, -7vw);
   }
+}
+
+.tip .value {
+  color: yellow;
+  font-weight: 700;
+}
+
+.tip .date {
+  color: black;
+  font-weight: 700;
 }
 
 circle {
   cursor: pointer;
+}
+
+p.error {
+  color: red;
+  font-size: 4vw;
+  margin-top: 4vw;
+}
+
+@media screen and (min-width: 750px) {
+  p.error {
+    font-size: 2vw;
+    margin-top: 2vw;
+  }
+}
+
+.button {
+  position: relative;
+  font-size: 3vw;
+  margin-bottom: 3vw;
+  display: inline-block;
+  padding: 0.5em;
+  border-radius: 0.5em;
+  border: solid #337fed 1px;
+  color: #ffffff;
+  -webkit-box-shadow: 1px 1px 0.5em 0 #000000;
+          box-shadow: 1px 1px 0.5em 0 #000000;
+  text-shadow: 1px 1px 0.5em #000000;
+  cursor: pointer;
+  text-align: center;
+}
+
+@media screen and (min-width: 750px) {
+  .button {
+    font-size: 1.5vw;
+    margin-bottom: 1.5vw;
+  }
+}
+
+.button:hover div:first-child {
+  background-image: -webkit-gradient(linear, left top, left bottom, from(#1e62d0), to(#3d94f6));
+  background-image: linear-gradient(top, #1e62d0, #3d94f6);
+}
+
+.button span {
+  visibility: hidden;
+}
+
+.button div {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0.5em;
+  border-radius: 0.5em;
+  text-shadow: 1px 1px 0.5em #000000;
+}
+
+.button div:first-child {
+  background-image: -webkit-gradient(linear, left top, left bottom, from(#3d94f6), to(#1e62d0));
+  background-image: linear-gradient(top, #3d94f6, #1e62d0);
+  width: 100%;
+}
+
+.barchart {
+  display: none;
+  width: 100%;
+  position: absolute;
+  left: 0;
+  top: 0;
+  background-color: rgba(107, 100, 100, 0.9);
+}
+
+.barchart h2 {
+  font-size: 6vw;
+  margin: 4vw 0;
+  line-height: 1;
+}
+
+@media screen and (min-width: 750px) {
+  .barchart h2 {
+    font-size: 3vw;
+    margin: 2vw 0;
+  }
+}
+
+.barchart h3 {
+  font-size: 4vw;
+}
+
+@media screen and (min-width: 750px) {
+  .barchart h3 {
+    font-size: 2vw;
+  }
 }
