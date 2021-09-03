@@ -4,7 +4,7 @@ const express = require("express");
 const app = express();
 const fs = require("fs");
 const cors = require("cors");
-const fetch = require("node-fetch");
+const httpClient = require("axios");
 
 const PORT = process.env.PORT || 8000;
 
@@ -42,9 +42,16 @@ const readFile = (filePath) => {
 const init = async () => {
   //query the tickers data from the API and writes it in a data file
   const writeTickers = async () => {
-    const tickers = await fetch(
-      `http://api.marketstack.com/v1/tickers?access_key=${apiKeys[0]}&limit=1000`
-    ).then((r) => r.json());
+    let tickers;
+    try {
+      const response = await httpClient.get(
+        `http://api.marketstack.com/v1/tickers?access_key=${apiKeys[0]}&limit=1000`
+      );
+      tickers = response.data;
+    } catch (error) {
+      console.error("error getting tickers data: ", error);
+      return false;
+    }
 
     try {
       fs.writeFileSync(
@@ -52,8 +59,11 @@ const init = async () => {
         JSON.stringify({ tickers: tickers.data })
       );
     } catch (err) {
-      console.error(err);
+      console.error("error writing tickers data: ", err);
+      return false;
     }
+
+    return true;
   };
 
   //query the data of the saved tickers(symbols) from the API
@@ -62,6 +72,7 @@ const init = async () => {
     const aYearAgo = new Date(new Date().setFullYear(date.getFullYear() - 1));
 
     const tickersFile = readFile(tickersFilePath);
+    if (!tickersFile) return false;
 
     //symbols of the stored tickers
     const symbolsArray = [];
@@ -86,13 +97,22 @@ const init = async () => {
     //queries the API in a for loop
     //retrives the data(of the last one year) of 32 items(symbols) in every loop
     for (const chunk of chunkedSymbolsArray) {
-      const response = await fetch(
-        `http://api.marketstack.com/v1/eod?access_key=${
-          apiKeys[index + 1]
-        }&symbols=${chunk.join(",")}&limit=10000&date_from=${aYearAgo
-          .toISOString()
-          .slice(0, 10)}&date_to=${date.toISOString().slice(0, 10)}`
-      ).then((r) => r.json());
+      let response;
+      try {
+        const resp = await httpClient.get(
+          `http://api.marketstack.com/v1/eod?access_key=${
+            apiKeys[index + 1]
+          }&symbols=${chunk.join(",")}&limit=10000&date_from=${aYearAgo
+            .toISOString()
+            .slice(0, 10)}&date_to=${date.toISOString().slice(0, 10)}`
+        );
+
+        response = resp.data;
+      } catch (error) {
+        console.error("error getting tickers data: ", error);
+
+        return false;
+      }
 
       //indicates the state of the updating process
       index++;
@@ -112,11 +132,16 @@ const init = async () => {
         })
       );
     } catch (err) {
-      console.error(err);
+      console.error("error writing tickers data: ", err);
+      return false;
     }
+
+    return true;
   };
 
   //starts the updating process if it is necessary
+  let respOfWriteTickers;
+  let respOfWriteTickersData;
   updating = true;
   const tickersData = readFile(tickersDataFilePath);
   if (
@@ -124,20 +149,25 @@ const init = async () => {
     !tickersData.date ||
     tickersData.date !== new Date().toISOString().slice(0, 10)
   ) {
-    await writeTickers();
-    await writeTickersData();
+    respOfWriteTickers = await writeTickers();
+    respOfWriteTickersData = await writeTickersData();
   }
   updating = false;
   index = 0;
+
+  if (!respOfWriteTickers || !respOfWriteTickersData) return false;
+
+  return true;
 };
 
 //initiates an updating process
 app.get("/api/refresh", async (req, res) => {
   if (updating) return;
 
-  await init();
+  const respOfInit = await init();
 
-  res.json({ msg: "Database has been updated" });
+  if (respOfInit) return res.json({ msg: "Database has been updated" });
+  else return res.status(500).json({ msg: "Error updating database" });
 });
 
 //gives back the current state of the updating process
@@ -149,11 +179,10 @@ app.get("/api/index", async (req, res) => {
 app.get("/api/tickers", (req, res) => {
   const tickersFile = readFile(tickersFilePath);
 
-  if (!tickersFile || !tickersFile.tickers) {
-    res.status(500).json({ err: "Server Error (file reading error)" });
-  } else {
-    res.json({ data: tickersFile.tickers });
-  }
+  if (!tickersFile || !tickersFile.tickers)
+    return res.status(500).json({ err: "Server Error (file reading error)" });
+
+  return res.json({ data: tickersFile.tickers });
 });
 
 //gives back the data of the ticker the symbol of which has been posted
@@ -161,13 +190,12 @@ app.post("/api/tickersData", (req, res) => {
   const tickersDataFile = readFile(tickersDataFilePath);
 
   if (!tickersDataFile || !tickersDataFile.tickersData)
-    res.status(500).json({ err: "Server Error (file reading error)" });
-  else {
-    const ticker = req.body.ticker;
-    res.json({
-      data: tickersDataFile.tickersData.filter((td) => td.symbol === ticker),
-    });
-  }
+    return res.status(500).json({ err: "Server Error (file reading error)" });
+
+  const ticker = req.body.ticker;
+  res.json({
+    data: tickersDataFile.tickersData.filter((td) => td.symbol === ticker),
+  });
 });
 
 app.listen(PORT, function () {
