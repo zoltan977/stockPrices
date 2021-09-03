@@ -38,6 +38,10 @@ const readFile = (filePath) => {
   }
 };
 
+//Stores the pre-read data in these variables
+let tickersFileGlobal = readFile(tickersFilePath);
+let tickersDataFileGlobal = readFile(tickersDataFilePath);
+
 //updates the data files if they are outdated or not existent
 const init = async () => {
   //query the tickers data from the API and writes it in a data file
@@ -58,6 +62,9 @@ const init = async () => {
         tickersFilePath,
         JSON.stringify({ tickers: tickers.data })
       );
+
+      //updates the global variable
+      tickersFileGlobal = { tickers: tickers.data };
     } catch (err) {
       console.error("error writing tickers data: ", err);
       return false;
@@ -131,6 +138,12 @@ const init = async () => {
           tickersData: tickersData,
         })
       );
+
+      //updates the global variable
+      tickersDataFileGlobal = {
+        date: date.toISOString().slice(0, 10),
+        tickersData: tickersData,
+      };
     } catch (err) {
       console.error("error writing tickers data: ", err);
       return false;
@@ -140,8 +153,8 @@ const init = async () => {
   };
 
   //starts the updating process if it is necessary
-  let respOfWriteTickers;
-  let respOfWriteTickersData;
+  let respOfWriteTickers = true;
+  let respOfWriteTickersData = true;
   updating = true;
   const tickersData = readFile(tickersDataFilePath);
   if (
@@ -172,29 +185,27 @@ app.get("/api/refresh", async (req, res) => {
 
 //gives back the current state of the updating process
 app.get("/api/index", async (req, res) => {
-  res.json({ index });
+  return res.json({ index });
 });
 
 //gives back the ticker symbols
 app.get("/api/tickers", (req, res) => {
-  const tickersFile = readFile(tickersFilePath);
-
-  if (!tickersFile || !tickersFile.tickers)
+  if (!tickersFileGlobal || !tickersFileGlobal.tickers)
     return res.status(500).json({ err: "Server Error (file reading error)" });
 
-  return res.json({ data: tickersFile.tickers });
+  return res.json({ data: tickersFileGlobal.tickers });
 });
 
 //gives back the data of the ticker the symbol of which has been posted
 app.post("/api/tickersData", (req, res) => {
-  const tickersDataFile = readFile(tickersDataFilePath);
-
-  if (!tickersDataFile || !tickersDataFile.tickersData)
+  if (!tickersDataFileGlobal || !tickersDataFileGlobal.tickersData)
     return res.status(500).json({ err: "Server Error (file reading error)" });
 
   const ticker = req.body.ticker;
-  res.json({
-    data: tickersDataFile.tickersData.filter((td) => td.symbol === ticker),
+  return res.json({
+    data: tickersDataFileGlobal.tickersData.filter(
+      (td) => td.symbol === ticker
+    ),
   });
 });
 
