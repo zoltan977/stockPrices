@@ -61,7 +61,7 @@ const writeTickersData = async (
     //indicates the state of the updating process
     index.value++;
 
-    console.log("pagination: ", response.pagination);
+    // console.log("pagination: ", response.pagination);
 
     tickersData.push(...response.data);
   }
