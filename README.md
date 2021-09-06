@@ -11,12 +11,16 @@ Stock Prices is a mobile-friendly single-page data visualisation website. It was
 - There is a data-update button on the bottom of the page
 - If the data-update button is pressed and the stored data is older than one day then the datafiles will be updated on the backend
 
-Stock Prices uses the following tech-stack:
+## Demo
+
+Application can be tested on this [demo](https://polar-lowlands-28295.herokuapp.com) page
+
+## Tech-stack:
 
 - [D3js](https://d3js.org/) - JavaScript library for datavisualization
 - [node.js](https://nodejs.org/en/) - Stores the API provided data in files
 - [Express](https://expressjs.com/) - Communicates with the frontend
-- [Vanilla Javascript] - Event handling on the frontend, communication with the backend, and data visualisation with the help of D3js
+- Vanilla Javascript - Event handling on the frontend, communication with the backend, and data visualisation with the help of D3js
 
 ## Installation
 
@@ -37,6 +41,14 @@ You should see the running application by navigating to
 ```
 
 in your preferred browser
+
+## Unit Tests
+
+With the command
+```sh
+npm run test
+```
+backend unit tests can be run
 
 ## License
 

@@ -5,7 +5,8 @@
   "main": "script.js",
   "scripts": {
     "test": "jest --setupFiles dotenv/config",
-    "start": "node server.js"
+    "start": "node server.js",
+    "heroku-postbuild": "npm install"
   },
   "repository": {
     "type": "git",
