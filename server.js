@@ -5,8 +5,12 @@ const app = express();
 const cors = require("cors");
 const readFile = require("./utils/readFile");
 const init = require("./utils/initAndUpdate");
+const morgan = require("morgan");
+const logger = require("./config/logger");
 
 const PORT = process.env.PORT || 8000;
+
+app.use(morgan("combined", { stream: logger.stream }));
 
 app.use(cors());
 app.use("/", express.static(__dirname + "/public"));

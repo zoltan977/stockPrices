@@ -41,7 +41,7 @@ const writeTickersData = async (
   //queries the API in a for loop
   //retrives the data(of the last one year) of 32 items(symbols) in every loop
   for (const chunk of chunkedSymbolsArray) {
-    let response;
+    let response = {};
     try {
       const resp = await httpClient.get(
         `http://api.marketstack.com/v1/eod?access_key=${
@@ -53,21 +53,21 @@ const writeTickersData = async (
 
       response = resp.data;
     } catch (error) {
-      console.error("error getting tickers data: ", error);
+      console.error("error getting tickers data: ", error?.response?.data);
 
-      return false;
+      response.data = [];
     }
 
     //indicates the state of the updating process
     index.value++;
-
-    // console.log("pagination: ", response.pagination);
 
     tickersData.push(...response.data);
   }
 
   //writing the data of the tickers in a file
   try {
+    if (!tickersData.length) return false;
+
     fs.writeFileSync(
       tickersDataFilePath,
       JSON.stringify({

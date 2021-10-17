@@ -195,10 +195,15 @@ const _load = async () => {
     if (response.msg && response.msg === "Database has been updated")
       location.reload();
 
-    if (response.msg && response.msg === "Error updating database")
+    if (response.msg && response.msg === "Error updating database") {
       document.querySelector(
         ".canvas"
       ).innerHTML = `<p class="error">Error updating database</p>`;
+
+      setTimeout(() => {
+        location.reload(true);
+      }, 2000);
+    }
   };
 
   // ticker data query and rendering of the chart

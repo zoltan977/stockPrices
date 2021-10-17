@@ -18,7 +18,8 @@ const init = async (
   //starts the updating process if it is necessary
   if (
     !tickersData.date ||
-    tickersData.date.toString() !== new Date().toISOString().slice(0, 10)
+    tickersData.date.toString().slice(0, 7) !==
+      new Date().toISOString().slice(0, 7)
   ) {
     respOfWriteTickers = await writeTickers(tickersFileGlobal, tickersFilePath);
     respOfWriteTickersData = await writeTickersData(
